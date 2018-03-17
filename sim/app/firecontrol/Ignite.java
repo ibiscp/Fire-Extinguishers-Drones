@@ -1,13 +1,13 @@
 /**
- * This is the entry point of the simulation. 
- * It represents the world over which the simulation is running, it extends the class SimState 
- * and offers all the functions that you are allowed to use in order to manage the state 
+ * This is the entry point of the simulation.
+ * It represents the world over which the simulation is running, it extends the class SimState
+ * and offers all the functions that you are allowed to use in order to manage the state
  * of the simulation.
- * 
+ *
  * Please refer to Mason Documentation for further details about the SimState and the Mason Loop.
- * 
+ *
  * @see SimState
- * 
+ *
  * @author dario albani
  * @mail albani@dis.uniroma1.it
  * @thanks Sean Luke
@@ -29,47 +29,47 @@ public class Ignite extends SimState{
 	private static final long serialVersionUID = 1;
 
 	/* where the agents are moving */
-	public Continuous3D air;	
+	public Continuous3D air;
 	/* Forest discretization
 	 * There are 4(5) different kinds of forest cell:
 	 * - normal (or foamed), trees are in good health (or saved)
 	 * - fire, there are some fires in the area and the cell requires attention
-	 * - burned, there is nothing left to save 
+	 * - burned, there is nothing left to save
 	 * - water, the cell is part of a lake or a river
 	 */
 	public ObjectGrid2D forest;
 
 	/* simulation params */
 	public int numUAVs = 2; //number of mavs involved in the simulation
-	public Bag UAVs; // all the agents in the simulation. Bag size is numMavs    
+	public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
 
 	public static int height = 60; //size of the forest
-	public static int width = 60; //size of the forest 
-	public static int depth = 50; //max altitude 
+	public static int width = 60; //size of the forest
+	public static int depth = 50; //max altitude
 
 	public static int cellsOnFire = 0;
 	public static int cellsBurned = 0;
 	public static int cellsOnWater = 0;
 
 	public LinkedList<Task> tasks;
-	
+
 	/**
 	 * Constructor
 	 */
 	public Ignite(long seed){
 		super(seed);
-	}	
+	}
 
 	/**
 	 * Check if the given position associated to an UAV is in forest bounds.
-	 * @param Double3D pos, the position to check 
+	 * @param Double3D pos, the position to check
 	 * @return true, if the UAV is in bound
 	 */
 	public static boolean isInBounds(Double3D pos){
-		return pos.x >= 0 
-				&& pos.y >= 0 
+		return pos.x >= 0
+				&& pos.y >= 0
 				&& pos.z >= 1
-				&& pos.x < width 
+				&& pos.x < width
 				&& pos.y < height
 				&& pos.z < depth;
 	}
@@ -83,7 +83,7 @@ public class Ignite extends SimState{
 		cellsOnFire = 0;
 		cellsBurned = 0;
 		WorldCell.selfIgniteMax = 0;
-		
+
 		air = new Continuous3D(1, width, height, depth);
 		forest = new ObjectGrid2D(width, height);
 
@@ -125,9 +125,9 @@ public class Ignite extends SimState{
 			while(radius<=random.nextInt(width)+2 && radius<=random.nextInt(height)+2){
 				for(int i=-radius; i<=radius; i++){
 					for(int j=-radius; j<=radius; j++){
-						nextLocation = new Int2D(lakeCenter.x+i, lakeCenter.y+j); 
+						nextLocation = new Int2D(lakeCenter.x+i, lakeCenter.y+j);
 						//place if not already present and if in bounds
-						if(nextLocation.x>=0 && nextLocation.y>=0 && 
+						if(nextLocation.x>=0 && nextLocation.y>=0 &&
 								nextLocation.x<width && nextLocation.y<height){
 							double p = gaussianPDF(Math.sqrt(i*i+j*j),(random.nextInt(3)-1)*random.nextDouble(), 3);
 
@@ -147,7 +147,7 @@ public class Ignite extends SimState{
 		//set the world on fire
 		//start with 3 fires and store their centroid in the tasks list
 		tasks = new LinkedList<>();
-		
+
 		//generate fires
 		int fires = 3;
 		for(int l=0; l<fires; l++){
@@ -176,7 +176,7 @@ public class Ignite extends SimState{
 			Task t = new Task(new Int2D(fireCenter.x, fireCenter.y), 0);
 			t.addCell(cell);
 			tasks.add(t);
-			
+
 			int radius = 1;
 
 			//start creating the fire
@@ -185,11 +185,11 @@ public class Ignite extends SimState{
 			while(radius<=random.nextInt(width)+2 && radius<=random.nextInt(height)+2){
 				for(int i=-radius; i<=radius; i++){
 					for(int j=-radius; j<=radius; j++){
-						nextLocation = new Int2D(fireCenter.x+i, fireCenter.y+j); 
+						nextLocation = new Int2D(fireCenter.x+i, fireCenter.y+j);
 						//place if not already present and if in bounds
-						if(nextLocation.x>=0 && 
-								nextLocation.y>=0 && 
-								nextLocation.x<width && 
+						if(nextLocation.x>=0 &&
+								nextLocation.y>=0 &&
+								nextLocation.x<width &&
 								nextLocation.y<height &&
 								!extractedLocation.contains(nextLocation)){
 							double p = gaussianPDF(Math.sqrt(i*i+j*j),(random.nextInt(3)-1)*random.nextDouble(), 3);
@@ -218,8 +218,8 @@ public class Ignite extends SimState{
 				schedule.scheduleRepeating((WorldCell)forest.field[w][h], 2, 1);
 			}
 		}
-		
-		//random placement of agents 
+
+		//random placement of agents
 		ArrayList<Double3D> extracted = new ArrayList<Double3D>();
 		Double3D location;
 		for(int i = 0 ; i < numUAVs; i++){
@@ -244,7 +244,7 @@ public class Ignite extends SimState{
 
 	/**
 	 * PDF
-	 * Compute the value of the gaussian PDF at a given x, with a given mean (location parameter) 
+	 * Compute the value of the gaussian PDF at a given x, with a given mean (location parameter)
 	 * and gaussian variance
 	 * @see: https://en.wikipedia.org/wiki/Normal_distribution
 	 */

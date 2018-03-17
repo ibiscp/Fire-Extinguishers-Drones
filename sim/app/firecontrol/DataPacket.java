@@ -1,6 +1,6 @@
 /*
  * Simple structure for a data packet.
- * 
+ *
  * @author dario albani
  * @mail dario.albani@istc.cnr.it
  */
@@ -12,14 +12,16 @@ public class DataPacket{
 	public class Header{
 		public Header(){
 			//TODO
-			System.err.println("TODO: You have to define the header. Maybe a timestamp and an ID?");
+			//System.err.println("TODO: You have to define the header. Maybe a timestamp and an ID?");
+			this.timestamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
+			this.id = id;
 		}
 	};
 
 	public class Payload{
 		public Payload(){
 			//TODO
-			System.err.println("TODO: You have to define the payload. What are you going to share?");
+			//System.err.println("TODO: You have to define the payload. What are you going to share?");
 		}
 	};
 
@@ -28,7 +30,7 @@ public class DataPacket{
 
 	//TODO
 	//define the data packet according to your payload and your header.
-	//please, note that if you do not define a good header you could have problem 
+	//please, note that if you do not define a good header you could have problem
 	//with duplicates messages
 	public DataPacket(){
 		this.header = new Header();

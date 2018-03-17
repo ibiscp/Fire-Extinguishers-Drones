@@ -1,6 +1,6 @@
 /*
  * The GUI for the simulation
- * 
+ *
  * @author dario albani
  * @mail dario.albani@istc.cnr.it
  * @thanks Sean Luke
@@ -54,7 +54,7 @@ public class IgniteWithUI extends GUIState
 			return 0;
 		}
 	};
-			
+
 	public IgniteWithUI(){
 		super(new Ignite(System.currentTimeMillis()));
 	}
@@ -64,7 +64,7 @@ public class IgniteWithUI extends GUIState
 	}
 
 	public static String getName(){
-		return "Home Work AI - IGNITE"; 
+		return "Home Work AI - IGNITE";
 	}
 
 	public void start(){
@@ -89,7 +89,7 @@ public class IgniteWithUI extends GUIState
 		cellPortrayal.setGridModulus(1);
 		cellPortrayal.setGridLineFraction(0.025);
 		cellPortrayal.setGridColor(Color.BLACK);
-		
+
 		// set up the airPortrayal
 		airPortrayal.setField(ignite.air);
 		OrientedPortrayal2D op = new OrientedPortrayal2D(new OvalPortrayal2D(Color.white, 0.85){
@@ -102,7 +102,7 @@ public class IgniteWithUI extends GUIState
 		}, 0, 1, new Color(50,50,50), OrientedPortrayal2D.SHAPE_COMPASS);
 		op.setDrawFilled(true);
 		airPortrayal.setPortrayalForAll(new CircledPortrayal2D(new LabelledPortrayal2D(op, 1.5, null, Color.white, true), 0, 2.5, Color.red, true));
-		
+
 		// reschedule the displayer
 		display.reset();
 		display.setBackdrop(new Color(255,242,223,255));
@@ -117,8 +117,8 @@ public class IgniteWithUI extends GUIState
 		super.init(c);
 
 		// make the displayer
-		int dispWidth = 750;
-		int dispHeight = 750;
+		int dispWidth = 500;
+		int dispHeight = 500;
 		display = new Display2D(dispWidth, dispHeight, this);
 		displayFrame = display.createFrame();
 		displayFrame.setTitle("Forest");
