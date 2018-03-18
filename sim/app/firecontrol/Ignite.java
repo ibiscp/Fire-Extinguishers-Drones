@@ -40,7 +40,7 @@ public class Ignite extends SimState{
 	public ObjectGrid2D forest;
 
 	/* simulation params */
-	public int numUAVs = 2; //number of mavs involved in the simulation
+	public int numUAVs = 20; //number of mavs involved in the simulation
 	public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
 
 	public static int height = 60; //size of the forest
@@ -52,6 +52,7 @@ public class Ignite extends SimState{
 	public static int cellsOnWater = 0;
 
 	public LinkedList<Task> tasks;
+	public LinkedList<DataPacket> data;
 
 	/**
 	 * Constructor
@@ -148,8 +149,10 @@ public class Ignite extends SimState{
 		//start with 3 fires and store their centroid in the tasks list
 		tasks = new LinkedList<>();
 
+		data = new LinkedList<>();
+
 		//generate fires
-		int fires = 3;
+		int fires = 1;
 		for(int l=0; l<fires; l++){
 			Int2D fireCenter;
 			Int2D nextLocation;

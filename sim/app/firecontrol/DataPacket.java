@@ -9,6 +9,7 @@ package sim.app.firecontrol;
 import java.text.SimpleDateFormat;
 import java.util.Set;
 import java.util.Date;
+import sim.util.Double3D;
 
 public class DataPacket{
 
@@ -24,15 +25,13 @@ public class DataPacket{
 	};
 
 	public class Payload{
-		public double x; //x position in the world
-		public double y; //y position in the world
+		public Double3D position;
 		public Set<WorldCell> knownCells;
 
-		public Payload(double x, double y, Set<WorldCell> knownCells){
+		public Payload(Double3D position, Set<WorldCell> knownCells){
 			//TODO
 			//System.err.println("TODO: You have to define the payload. What are you going to share?");
-			this.x = x;
-			this.y = y;
+			this.position = position;
 			this.knownCells = knownCells;
 		}
 	};
@@ -44,8 +43,8 @@ public class DataPacket{
 	//define the data packet according to your payload and your header.
 	//please, note that if you do not define a good header you could have problem
 	//with duplicates messages
-	public DataPacket(int id, double x, double y, Set<WorldCell> knownCells){
+	public DataPacket(int id, Double3D position, Set<WorldCell> knownCells){
 		this.header = new Header(id);
-		this.payload = new Payload(x, y, knownCells);
+		this.payload = new Payload(position, knownCells);
 	}
 }

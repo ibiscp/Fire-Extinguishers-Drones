@@ -181,33 +181,27 @@ public class UAV implements Steppable{
 		//else, if I have a target and task I need to move toward the target
 		//check if I am over the target and in that case execute the right action;
 		//if not, continue to move toward the target
-		else if(this.target.equals(new Double3D(x, y, z))){
+		else if(this.target.equals(new Double3D(this.x, this.y, this.z))){
 			//if on fire then extinguish, otherwise move on
 			WorldCell cell = (WorldCell)ignite.forest.field[(int) x][(int) y];
 			//store the knowledge for efficient selection
 			this.knownCells.add(cell);
 			this.knownForest.field[cell.getX()][cell.getY()] = cell;
 
-			if(!cell.type.equals(CellType.FIRE))
-				this.attempt += 1;
-
-			if (this.attempt == 5){
-				this.attempt = 0;
-				System.err.println("Comunicate");
-			}
-
 			//TODO maybe, you can share the knowledge about the just extinguished cell here!
-			DataPacket data = new DataPacket(this.id, this.x, this.y, this.knownCells);
 
-			int[] a = retrieveAgents(ignite);
-			System.err.println(a);
-
-			if(cell.type.equals(CellType.FIRE))
+			if(cell.type.equals(CellType.FIRE)){
+				Double3D position = new Double3D(this.x,this.y,this.z);
+				DataPacket data = new DataPacket(this.id, position, this.knownCells);
+				sendData(data, ignite);			// Only send data if in FIRE cells
 				return AgentAction.EXTINGUISH;
-			else
+			}
+			else{
+				this.attempt += 1;
 				return AgentAction.SELECT_CELL;
-
+			}
 		}else{
+			//System.err.println("UAV " + this.id + "\tTarget " + this.target + "\tPosition " + new Double3D(this.x, this.y, this.z));
 			return AgentAction.MOVE;
 		}
 	}
@@ -250,20 +244,49 @@ public class UAV implements Steppable{
 	 */
 	private void selectCell(Ignite ignite) {
 		//remember to set the new target at the end of the procedure
-		Double3D newTarget = null;
+		Double3D newTarget = new Double3D(this.x, this.y, this.z);
 
 		// TODO
 		//the cell selection should be inside myTask area.
+
+		// Request communication if UAV is lost in NORMAL or BURNED cells
+		if (this.attempt >= 5){
+			this.attempt = 0;
+
+			LinkedList<DataPacket> dataReceived = receiveData(ignite, this.id);
+
+			// Find the closest one
+			Double3D closest = findClosest(dataReceived);
+
+			if (closest.x != 0 && closest.y != 0){
+				newTarget = new Double3D(closest.x, closest.y, this.z);
+				System.err.println("UAV " + this.id +
+													":\tOld position: " + this.x + " " + this.y +
+													"\tNew Position " + newTarget.x + " " + newTarget.y);
+			}
+		}
+
+		this.target = selectRandomCell(ignite, newTarget);
+
+			/*if (this.target.x == 0 && this.target.y == 0)
+				this.target = selectRandomCell(ignite);
+		}
+		else{
+			this.target = selectRandomCell(ignite);
+		}*/
+	}
+
+	private Double3D selectRandomCell(Ignite ignite, Double3D newTarget){
 		int randX, randY;
-		Double3D newPosition;
+		Double3D newPosition = null;
 
 		do{
 			randX = random.nextInt(3) - 1;
 			randY = random.nextInt(3) - 1;
-			newPosition = new Double3D(this.x + randX, this.y + randY, z);
+			newPosition = new Double3D(newTarget.x + randX, newTarget.y + randY, newTarget.z);
 		} while((randX == 0 && randY == 0) || !(ignite.isInBounds(newPosition)));
 
-		this.target = newPosition;
+		return newPosition;
 	}
 
 	/**
@@ -328,7 +351,7 @@ public class UAV implements Steppable{
 	 * Check if the input location is within communication range
 	 */
 	public boolean isInCommunicationRange(Double3D otherLoc){
-		Double3D myLoc = new Double3D(x,y,z);
+		Double3D myLoc = new Double3D(this.x,this.y,this.z);
 		return myLoc.distance(otherLoc) <= UAV.communicationRange;
 	}
 
@@ -336,18 +359,51 @@ public class UAV implements Steppable{
 	 * COMMUNICATION
 	 * Send a message to the team
 	 */
-	public void sendData(DataPacket packet){
+	public void sendData(DataPacket packet, Ignite ignite){
 		//TODO
 
+		for(DataPacket dp : ignite.data) {
+		  if(dp.header.id == packet.header.id) {
+		    ignite.data.remove(dp);
+		    break;
+		   }
+		}
+
+		ignite.data.add(packet);
 	}
 
 	/**
 	 * COMMUNICATION
 	 * Receive a message from the team
 	 */
-	public void receiveData(DataPacket packet){
+	public LinkedList<DataPacket> receiveData(Ignite ignite, int id){
 		//TODO
+		LinkedList<DataPacket> dataReceived = new LinkedList<>();
 
+		for(DataPacket dp : ignite.data) {
+			if(dp.header.id != id && isInCommunicationRange(dp.payload.position)) {
+					dataReceived.add(dp);
+			 }
+		}
+		return dataReceived;
+	}
+
+	// Given a list of DataPacket return the closest one to the UAV
+	public Double3D findClosest(LinkedList<DataPacket> data){
+		Double3D newPosition = new Double3D();
+		Double3D myLoc = new Double3D(this.x,this.y,this.z);
+		double distance = 1000000;
+
+		for(DataPacket dp : data) {
+			if(myLoc.distance(dp.payload.position) < distance) {
+					distance = myLoc.distance(dp.payload.position);
+					newPosition = dp.payload.position;
+			 }
+		}
+
+		//System.err.println(dataReceived.size());
+
+		return newPosition;
 		//hint for a possible flooding strategy:
 		//if: (neverReceived(packet) && packet.origin != this) -> sendData(packet)
 	}
