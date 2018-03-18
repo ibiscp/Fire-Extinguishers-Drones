@@ -197,7 +197,10 @@ public class UAV implements Steppable{
 			}
 
 			//TODO maybe, you can share the knowledge about the just extinguished cell here!
+			DataPacket data = new DataPacket(this.id, this.x, this.y, this.knownCells);
 
+			int[] a = retrieveAgents(ignite);
+			System.err.println(a);
 
 			if(cell.type.equals(CellType.FIRE))
 				return AgentAction.EXTINGUISH;
@@ -335,6 +338,7 @@ public class UAV implements Steppable{
 	 */
 	public void sendData(DataPacket packet){
 		//TODO
+
 	}
 
 	/**

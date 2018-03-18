@@ -6,11 +6,16 @@
  */
 
 package sim.app.firecontrol;
+import java.text.SimpleDateFormat;
+import java.util.Set;
+import java.util.Date;
 
 public class DataPacket{
 
 	public class Header{
-		public Header(){
+		public String timestamp;
+		public int id;
+		public Header(int id){
 			//TODO
 			//System.err.println("TODO: You have to define the header. Maybe a timestamp and an ID?");
 			this.timestamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
@@ -19,9 +24,16 @@ public class DataPacket{
 	};
 
 	public class Payload{
-		public Payload(){
+		public double x; //x position in the world
+		public double y; //y position in the world
+		public Set<WorldCell> knownCells;
+
+		public Payload(double x, double y, Set<WorldCell> knownCells){
 			//TODO
 			//System.err.println("TODO: You have to define the payload. What are you going to share?");
+			this.x = x;
+			this.y = y;
+			this.knownCells = knownCells;
 		}
 	};
 
@@ -32,8 +44,8 @@ public class DataPacket{
 	//define the data packet according to your payload and your header.
 	//please, note that if you do not define a good header you could have problem
 	//with duplicates messages
-	public DataPacket(){
-		this.header = new Header();
-		this.payload = new Payload();
+	public DataPacket(int id, double x, double y, Set<WorldCell> knownCells){
+		this.header = new Header(id);
+		this.payload = new Payload(x, y, knownCells);
 	}
 }
