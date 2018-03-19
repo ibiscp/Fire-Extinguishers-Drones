@@ -56,6 +56,7 @@ public class UAV implements Steppable{
 	public int attempt;
 	public static int height = 60; //size of the forest
 	public static int width = 60; //size of the forest
+	public DataPacket data;
 
 	public UAV(int id, Double3D myPosition){
 		//set agent's id
@@ -72,6 +73,7 @@ public class UAV implements Steppable{
 		// Personal
 		this.knownForest = new ObjectGrid2D(width, height);
 		this.attempt = 0;
+		this.data = null;
 	}
 
 	// DO NOT REMOVE
@@ -141,6 +143,8 @@ public class UAV implements Steppable{
 			//System.err.println("TODO: and now? Use random walk or task assignment!");
 
 			selectCell(ignite); //<- change the signature if needed
+			this.action = a;
+			break;
 
 		case MOVE:
 			move(state);
@@ -192,11 +196,12 @@ public class UAV implements Steppable{
 
 			if(cell.type.equals(CellType.FIRE)){
 				Double3D position = new Double3D(this.x,this.y,this.z);
-				DataPacket data = new DataPacket(this.id, position, this.knownCells);
-				sendData(data, ignite);			// Only send data if in FIRE cells
+				DataPacket data = new DataPacket(this.id, position, this.knownCells, this.myTask);
+				sendData(data, ignite, true);			// Only send data if in FIRE cells
 				return AgentAction.EXTINGUISH;
 			}
 			else{
+				sendData(new DataPacket(-1, null, null, null), ignite, false);
 				this.attempt += 1;
 				return AgentAction.SELECT_CELL;
 			}
@@ -229,7 +234,6 @@ public class UAV implements Steppable{
 			valuey = random.nextDouble() * radius * ((random.nextInt() % 2 == 0) ? 1 : -1);
 		} while(!(ignite.isInBounds(new Double3D(newTask.centroid.x + (int)valuex, newTask.centroid.y + (int)valuey, z))));
 
-
 		try{
 			this.myTask = newTask;
 			this.target = new Double3D(newTask.centroid.x + (int)valuex, newTask.centroid.y + (int)valuey, z);
@@ -250,41 +254,56 @@ public class UAV implements Steppable{
 		//the cell selection should be inside myTask area.
 
 		// Request communication if UAV is lost in NORMAL or BURNED cells
-		if (this.attempt >= 5){
+		if (this.attempt >= 10){
 			this.attempt = 0;
 
 			LinkedList<DataPacket> dataReceived = receiveData(ignite, this.id);
+			LinkedList<DataPacket> totalData = testeAllData(ignite, this.id);
+			//System.err.println("Number of messages: " + dataReceived.size());
+			//System.err.println("Messages: " + dataReceived.size());
 
+			if (dataReceived.size() == 0){
+				System.err.println("UAV " + this.id + " new task");
+				this.myTask = null;
+				this.target = null;
+			}
+			else{
 			// Find the closest one
 			Double3D closest = findClosest(dataReceived);
 
-			if (closest.x != 0 && closest.y != 0){
-				newTarget = new Double3D(closest.x, closest.y, this.z);
+			//if (closest.x != 0 && closest.y != 0){
+			newTarget = new Double3D(closest.x, closest.y, this.z);
 				System.err.println("UAV " + this.id +
-													":\tOld position: " + this.x + " " + this.y +
-													"\tNew Position " + newTarget.x + " " + newTarget.y);
+												"\tOld position: " + this.x + " " + this.y +
+												"\tNew position: " + newTarget.x + " " + newTarget.y +
+												"\tNumber of messages: " + dataReceived.size() +
+												"\tNumber of total messages: " + totalData.size());
 			}
 		}
-
-		this.target = selectRandomCell(ignite, newTarget);
-
-			/*if (this.target.x == 0 && this.target.y == 0)
-				this.target = selectRandomCell(ignite);
-		}
-		else{
-			this.target = selectRandomCell(ignite);
-		}*/
+		if (this.myTask != null)
+			this.target = selectRandomCell(ignite, newTarget);
 	}
 
 	private Double3D selectRandomCell(Ignite ignite, Double3D newTarget){
 		int randX, randY;
+		int trials = 0;
 		Double3D newPosition = null;
+		double radius = myTask.radius;
+		double newRadius;
 
 		do{
-			randX = random.nextInt(3) - 1;
-			randY = random.nextInt(3) - 1;
+			trials += 1;
+			randX = random.nextInt(5) - 2;
+			randY = random.nextInt(5) - 2;
+			newRadius = Math.sqrt(Math.pow(x + randX - myTask.centroid.x,2) + Math.pow(y + randY - myTask.centroid.y,2));
 			newPosition = new Double3D(newTarget.x + randX, newTarget.y + randY, newTarget.z);
-		} while((randX == 0 && randY == 0) || !(ignite.isInBounds(newPosition)));
+
+			if(trials >= 7){
+				newPosition = newTarget;
+				this.attempt += 1;
+				break;
+			}
+		} while((randX == 0 && randY == 0) || !(ignite.isInBounds(newPosition)) || newRadius > radius);
 
 		return newPosition;
 	}
@@ -359,17 +378,19 @@ public class UAV implements Steppable{
 	 * COMMUNICATION
 	 * Send a message to the team
 	 */
-	public void sendData(DataPacket packet, Ignite ignite){
-		//TODO
-
-		for(DataPacket dp : ignite.data) {
+	public void sendData(DataPacket packet, Ignite ignite, boolean add){
+		/*for(DataPacket dp : ignite.data) {
 		  if(dp.header.id == packet.header.id) {
 		    ignite.data.remove(dp);
 		    break;
 		   }
 		}
-
-		ignite.data.add(packet);
+		if(add)
+			ignite.data.add(packet);*/
+		if(add)
+			this.data = packet;
+		else
+			this.data = null;
 	}
 
 	/**
@@ -377,13 +398,33 @@ public class UAV implements Steppable{
 	 * Receive a message from the team
 	 */
 	public LinkedList<DataPacket> receiveData(Ignite ignite, int id){
-		//TODO
 		LinkedList<DataPacket> dataReceived = new LinkedList<>();
 
-		for(DataPacket dp : ignite.data) {
-			if(dp.header.id != id && isInCommunicationRange(dp.payload.position)) {
+		/*for(DataPacket dp : ignite.data) {
+			if(dp.header.id != id && isInCommunicationRange(dp.payload.position) && dp.payload.task == this.myTask) {
 					dataReceived.add(dp);
 			 }
+		}
+		return dataReceived;*/
+
+		for(UAV uav : ignite.UAVss){
+			DataPacket dp = uav.data;
+			if(dp != null){
+				if(dp.header.id != id && isInCommunicationRange(dp.payload.position) && dp.payload.task == this.myTask)
+						dataReceived.add(dp);
+			}
+		}
+		return dataReceived;
+	}
+
+	public LinkedList<DataPacket> testeAllData(Ignite ignite, int id){
+		LinkedList<DataPacket> dataReceived = new LinkedList<>();
+
+		for(UAV uav : ignite.UAVss){
+			DataPacket dp = uav.data;
+			if(dp != null){
+					dataReceived.add(dp);
+			}
 		}
 		return dataReceived;
 	}
@@ -400,12 +441,7 @@ public class UAV implements Steppable{
 					newPosition = dp.payload.position;
 			 }
 		}
-
-		//System.err.println(dataReceived.size());
-
 		return newPosition;
-		//hint for a possible flooding strategy:
-		//if: (neverReceived(packet) && packet.origin != this) -> sendData(packet)
 	}
 
 	/**

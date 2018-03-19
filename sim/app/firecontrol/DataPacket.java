@@ -27,12 +27,14 @@ public class DataPacket{
 	public class Payload{
 		public Double3D position;
 		public Set<WorldCell> knownCells;
+		public Task task;
 
-		public Payload(Double3D position, Set<WorldCell> knownCells){
+		public Payload(Double3D position, Set<WorldCell> knownCells, Task task){
 			//TODO
 			//System.err.println("TODO: You have to define the payload. What are you going to share?");
 			this.position = position;
 			this.knownCells = knownCells;
+			this.task = task;
 		}
 	};
 
@@ -43,8 +45,8 @@ public class DataPacket{
 	//define the data packet according to your payload and your header.
 	//please, note that if you do not define a good header you could have problem
 	//with duplicates messages
-	public DataPacket(int id, Double3D position, Set<WorldCell> knownCells){
+	public DataPacket(int id, Double3D position, Set<WorldCell> knownCells, Task task){
 		this.header = new Header(id);
-		this.payload = new Payload(position, knownCells);
+		this.payload = new Payload(position, knownCells, task);
 	}
 }
