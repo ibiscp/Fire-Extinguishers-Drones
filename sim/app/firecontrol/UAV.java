@@ -185,7 +185,8 @@ public class UAV implements Steppable{
 		//else, if I have a target and task I need to move toward the target
 		//check if I am over the target and in that case execute the right action;
 		//if not, continue to move toward the target
-		else if(this.target.equals(new Double3D(this.x, this.y, this.z))){
+		//else if(this.target.equals(ignite.air.discretize(new Double3D(x, y, z)))){
+		else if(this.target.equals(new Double3D(x, y, z))){
 			//if on fire then extinguish, otherwise move on
 			WorldCell cell = (WorldCell)ignite.forest.field[(int) x][(int) y];
 			//store the knowledge for efficient selection
@@ -254,7 +255,7 @@ public class UAV implements Steppable{
 		//the cell selection should be inside myTask area.
 
 		// Request communication if UAV is lost in NORMAL or BURNED cells
-		if (this.attempt >= 10){
+		if (this.attempt >= 20){
 			this.attempt = 0;
 
 			LinkedList<DataPacket> dataReceived = receiveData(ignite, this.id);
@@ -263,9 +264,11 @@ public class UAV implements Steppable{
 			//System.err.println("Messages: " + dataReceived.size());
 
 			if (dataReceived.size() == 0){
-				System.err.println("UAV " + this.id + " new task");
-				this.myTask = null;
+				//System.err.println("UAV " + this.id + " new task");
+				//this.myTask = null;
 				this.target = null;
+				if (this.myTask.radius == 0)
+					this.myTask = null;
 			}
 			else{
 			// Find the closest one
@@ -298,12 +301,12 @@ public class UAV implements Steppable{
 			newRadius = Math.sqrt(Math.pow(x + randX - myTask.centroid.x,2) + Math.pow(y + randY - myTask.centroid.y,2));
 			newPosition = new Double3D(newTarget.x + randX, newTarget.y + randY, newTarget.z);
 
-			if(trials >= 7){
+			if(trials >= 10){
 				newPosition = newTarget;
 				this.attempt += 1;
 				break;
 			}
-		} while((randX == 0 && randY == 0) || !(ignite.isInBounds(newPosition)) || newRadius > radius);
+		} while((randX == 0 && randY == 0) || !(ignite.isInBounds(newPosition)) || newRadius > radius || newRadius < radius-10);
 
 		return newPosition;
 	}
@@ -358,7 +361,7 @@ public class UAV implements Steppable{
 			this.startedToExtinguishAt = (int) ignite.schedule.getSteps();
 		}
 		//enough time has passed, the fire is gone
-		if(ignite.schedule.getSteps() - startedToExtinguishAt == stepToExtinguish){
+		if(ignite.schedule.getSteps() - startedToExtinguishAt >= stepToExtinguish){
 			startedToExtinguishAt = -1;
 			return true;
 		}

@@ -40,7 +40,7 @@ public class Ignite extends SimState{
 	public ObjectGrid2D forest;
 
 	/* simulation params */
-	public int numUAVs = 30; //number of mavs involved in the simulation
+	public int numUAVs = 10; //number of mavs involved in the simulation
 	public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
 	public LinkedList<UAV> UAVss;
 
