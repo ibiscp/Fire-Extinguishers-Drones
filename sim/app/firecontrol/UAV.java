@@ -24,6 +24,8 @@ import sim.util.Int3D;
 
 // Personal
 import sim.field.grid.ObjectGrid2D;
+import java.util.Map;
+import java.util.HashMap;
 
 public class UAV implements Steppable{
 	private static final long serialVersionUID = 1L;
@@ -57,6 +59,7 @@ public class UAV implements Steppable{
 	public static int height = 60; //size of the forest
 	public static int width = 60; //size of the forest
 	public DataPacket data;
+	public Map<UAV, Double> proposals;
 
 	public UAV(int id, Double3D myPosition){
 		//set agent's id
@@ -74,6 +77,7 @@ public class UAV implements Steppable{
 		this.knownForest = new ObjectGrid2D(width, height);
 		this.attempt = 0;
 		this.data = null;
+		this.proposals = new HashMap<UAV, Double>();
 	}
 
 	// DO NOT REMOVE
@@ -120,7 +124,13 @@ public class UAV implements Steppable{
 		//select the next action for the agent
 		AgentAction a = nextAction(ignite);
 
+		assignTasks(ignite);
+		//this.action = a;
+
 		switch(a){
+		case PROPOSED:
+				//assignTasks(ignite);
+				break;
 		case SELECT_TASK:
 			// ------------------------------------------------------------------------
 			// this is where your task allocation logic has to go.
@@ -131,7 +141,7 @@ public class UAV implements Steppable{
 
 			selectTask(ignite); //<- change the signature if needed
 
-			this.action = a;
+			//this.action = a;
 			break;
 
 		case SELECT_CELL:
@@ -143,8 +153,8 @@ public class UAV implements Steppable{
 			//System.err.println("TODO: and now? Use random walk or task assignment!");
 
 			selectCell(ignite); //<- change the signature if needed
-			this.action = a;
-			break;
+			//this.action = a;
+			//break;
 
 		case MOVE:
 			move(state);
@@ -160,11 +170,11 @@ public class UAV implements Steppable{
 				this.target=null;
 			}
 
-			this.action = a;
+			this.action = a;//AgentAction.SELECT_CELL;
 			break;
 
 		default:
-			System.exit(-1);
+			//System.exit(-1);
 		}
 	}
 
@@ -174,8 +184,16 @@ public class UAV implements Steppable{
 	 * strategy
 	 */
 	private AgentAction nextAction(Ignite ignite){
+		/*if(this.myTask == null && this.action == null){
+			this.target = new Double3D(random.nextInt(height), random.nextInt(width), this.z);
+			return AgentAction.MOVE;
+		}
+		else */if(this.myTask == null && this.action == AgentAction.PROPOSED){
+			System.err.println("UAV " + this.id + ":\tProposed!");
+			return AgentAction.PROPOSED;
+		}
 		//if I do not have a task I need to take one
-		if(this.myTask == null){
+		else if(this.myTask == null){
 			return AgentAction.SELECT_TASK;
 		}
 		//else, if I have a task but I do not have target I need to take one
@@ -197,12 +215,12 @@ public class UAV implements Steppable{
 
 			if(cell.type.equals(CellType.FIRE)){
 				Double3D position = new Double3D(this.x,this.y,this.z);
-				DataPacket data = new DataPacket(this.id, position, this.knownCells, this.myTask);
+				DataPacket data = new DataPacket(this.id, position, this.knownCells, this.myTask, this.myTask.manager.id == this.id);
 				sendData(data, ignite, true);			// Only send data if in FIRE cells
 				return AgentAction.EXTINGUISH;
 			}
 			else{
-				sendData(new DataPacket(-1, null, null, null), ignite, false);
+				sendData(new DataPacket(-1, null, null, null, this.myTask.manager.id == this.id), ignite, false);
 				this.attempt += 1;
 				return AgentAction.SELECT_CELL;
 			}
@@ -212,35 +230,77 @@ public class UAV implements Steppable{
 		}
 	}
 
-	/**
-	 * Take the centroid of the fire and its expected radius and extract the new
-	 * task for the agent.
-	 */
-	private void selectTask(Ignite ignite) {
-		//remember to set the new task at the end of the procedure
-		Task newTask = null;
-
-		// TODO
-		//System.err.println("TODO: implement here your strategy for selection/auction");
-
-		LinkedList<Task> tasks = ignite.tasks;
-
-		newTask = tasks.get(random.nextInt(tasks.size()));
-
-		double radius = newTask.radius;
-		double valuex, valuey;
-
-		do{
-			valuex = random.nextDouble() * radius * ((random.nextInt() % 2 == 0) ? 1 : -1);
-			valuey = random.nextDouble() * radius * ((random.nextInt() % 2 == 0) ? 1 : -1);
-		} while(!(ignite.isInBounds(new Double3D(newTask.centroid.x + (int)valuex, newTask.centroid.y + (int)valuey, z))));
-
+	private void assignTasks(Ignite ignite) {
 		try{
-			this.myTask = newTask;
-			this.target = new Double3D(newTask.centroid.x + (int)valuex, newTask.centroid.y + (int)valuey, z);
-		}catch(NullPointerException e){
-			System.err.println("Something is null, have you forgetten to implement some part?");
+			if(this.id == this.myTask.manager.id && this.proposals.size() > 0){
+
+				int totalFire = 0;
+
+				// Get total number of cells with fire
+				for(Task task : ignite.tasks)
+					totalFire += task.utility;
+
+				// Calculate UAV needed
+				int uavNeeded = (int)(ignite.numUAVs * this.myTask.utility / totalFire);
+
+				/*System.err.println("UAV " + this.id + ":" +
+														"\tProposals " + this.proposals.size() +
+														"\tUAV needed " + this.myTask.utility +
+														"\tTotal fire " + totalFire);
+														*/
+
+				// Assign tasks for the drones
+				int proposals = this.proposals.size();
+				for (int i=0; i<proposals; i++){
+					UAV bestUAV = null;
+					double bestOffer = 0;
+					for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
+						if (UAVoffer.getValue() > bestOffer)
+							bestOffer = UAVoffer.getValue();
+							bestUAV = UAVoffer.getKey();
+					}
+					this.proposals.remove(bestUAV);
+					/*System.err.println("UAV " + bestUAV.id + ":" +
+															"\tOffer " + bestOffer);*/
+					bestUAV.myTask = this.myTask;
+				}
+			}
+		}catch(NullPointerException e){}
+	}
+
+	 /**
+ 	 * Take the centroid of the fire and its expected radius and extract the new
+ 	 * task for the agent.
+ 	 */
+	private void selectTask(Ignite ignite) {
+		Task newTask = this.myTask;
+
+		// Check if UAV is the manager
+		for(Task task : ignite.tasks){
+			if(this.id == task.manager.id){
+				requestForBid(task, ignite);
+				System.err.println("UAV " + this.id + ":\tRequest for proposal sent!");
+
+				this.action = AgentAction.PROPOSED;
+				this.myTask = task;
+				this.target = new Double3D(task.centroid.x, task.centroid.y, this.z);
+				break;
+			}
 		}
+
+		// Check for tasks and propose
+		if (newTask == null && this.action == null){
+			LinkedList<DataPacket> dataReceived = receiveData(ignite, this.id);
+
+			for (DataPacket dp : dataReceived){
+				if (dp.header.taskProposal == true)
+					propose(dp.payload.task, ignite);
+					this.action = AgentAction.PROPOSED;
+					System.err.println("UAV " + this.id + ":\tPropose sent!");
+			}
+		}
+
+		//System.err.println("UAV " + this.id + ":\tAction " + this.action);
 	}
 
 	/**
@@ -251,11 +311,12 @@ public class UAV implements Steppable{
 		//remember to set the new target at the end of the procedure
 		Double3D newTarget = new Double3D(this.x, this.y, this.z);
 
+		//System.err.println("UAV " + this.id + ":\tNeed Target!");
 		// TODO
 		//the cell selection should be inside myTask area.
 
 		// Request communication if UAV is lost in NORMAL or BURNED cells
-		if (this.attempt >= 20){
+		if (this.attempt >= 10){
 			this.attempt = 0;
 
 			LinkedList<DataPacket> dataReceived = receiveData(ignite, this.id);
@@ -354,7 +415,7 @@ public class UAV implements Steppable{
 	 * Start to extinguish the fire at current location.
 	 * @return true if enough time has passed and the fire is gone, false otherwise
 	 * @see this.stepToExtinguish
-	 * @see this.startedToExtinguishAt
+	 * @see this.startedToExtiextinguishnguishAt
 	 */
 	private boolean extinguish(Ignite ignite){
 		if(startedToExtinguishAt==-1){
@@ -382,17 +443,10 @@ public class UAV implements Steppable{
 	 * Send a message to the team
 	 */
 	public void sendData(DataPacket packet, Ignite ignite, boolean add){
-		/*for(DataPacket dp : ignite.data) {
-		  if(dp.header.id == packet.header.id) {
-		    ignite.data.remove(dp);
-		    break;
-		   }
-		}
-		if(add)
-			ignite.data.add(packet);*/
+		// if the drone is a manager, its packet cannot be deleted
 		if(add)
 			this.data = packet;
-		else
+		else if (this.myTask.manager.id != this.id)
 			this.data = null;
 	}
 
@@ -403,27 +457,21 @@ public class UAV implements Steppable{
 	public LinkedList<DataPacket> receiveData(Ignite ignite, int id){
 		LinkedList<DataPacket> dataReceived = new LinkedList<>();
 
-		/*for(DataPacket dp : ignite.data) {
-			if(dp.header.id != id && isInCommunicationRange(dp.payload.position) && dp.payload.task == this.myTask) {
-					dataReceived.add(dp);
-			 }
-		}
-		return dataReceived;*/
-
-		for(UAV uav : ignite.UAVss){
+		for(UAV uav : ignite.UAVs){
 			DataPacket dp = uav.data;
 			if(dp != null){
-				if(dp.header.id != id && isInCommunicationRange(dp.payload.position) && dp.payload.task == this.myTask)
+				if(dp.header.id != id && isInCommunicationRange(dp.payload.position) && (dp.payload.task == this.myTask || this.action == null))
 						dataReceived.add(dp);
 			}
 		}
 		return dataReceived;
 	}
 
+	// Check all data received for the given id
 	public LinkedList<DataPacket> testeAllData(Ignite ignite, int id){
 		LinkedList<DataPacket> dataReceived = new LinkedList<>();
 
-		for(UAV uav : ignite.UAVss){
+		for(UAV uav : ignite.UAVs){
 			DataPacket dp = uav.data;
 			if(dp != null){
 					dataReceived.add(dp);
@@ -431,6 +479,31 @@ public class UAV implements Steppable{
 		}
 		return dataReceived;
 	}
+
+	// Messages for the auction
+	//#############################################################################
+	// Request for bid
+	public void requestForBid(Task task, Ignite ignite){
+		Double3D position = new Double3D(this.x,this.y,this.z);
+		DataPacket taskProposal = new DataPacket(-1, position, null, task, true);
+		sendData(taskProposal, ignite, true);
+	}
+
+	// Accept task
+	public void propose(Task task, Ignite ignite){
+		//Double3D position = new Double3D(this.x,this.y,this.z);
+		//DataPacket taskAccept = new DataPacket(-1, position, null, task, "taskAccept");
+		double distance = Math.sqrt(Math.pow(this.x - task.centroid.x,2) + Math.pow(this.y - task.centroid.y,2));
+		double offer = task.utility / distance;
+		task.manager.proposals.put(this, offer);
+	}
+
+	// Refuse task
+	public void refuse(Task task, Ignite ignite){
+		//DataPacket taskRefused = new DataPacket(-1, null, null, task, "taskRefused");
+		task.manager.proposals.put(this, 0.0);
+	}
+
 
 	// Given a list of DataPacket return the closest one to the UAV
 	public Double3D findClosest(LinkedList<DataPacket> data){

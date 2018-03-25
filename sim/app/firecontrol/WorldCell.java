@@ -6,21 +6,21 @@ import sim.util.Double3D;
 import sim.util.Int2D;
 
 /**
- * Abstract class that implements a generic cell 
+ * Abstract class that implements a generic cell
  * There are 4 different kinds of forest cell:
  * - normal, trees are still in good health
  * - fire, there are some fires in the area and the cell requires attention
- * - burned, there is nothing left to save 
+ * - burned, there is nothing left to save
  * - water, the cell is part of a lake or a river
- * 
+ *
  * @author dario albani
- * @mail albani@dis.uniroma1.it	
+ * @mail albani@dis.uniroma1.it
  */
 public class WorldCell implements Steppable{
 	private static final long serialVersionUID = 1L;
 	public int x; //cell x location
 	public int y; //cell y location
-	public CellType type; //type of the cell 	
+	public CellType type; //type of the cell
 
 	//params
 	public static double statusThreshold = 10E-3;
@@ -28,14 +28,14 @@ public class WorldCell implements Steppable{
 	public static double fireStatusMultiplier = 5*10E-4;
 	public static double selfIgniteThreshold = 1-10E-5;
 	public static int selfIgniteMax;
-	
+
 	//if this reach 0 and
 	// - the type is normal, the type becomes fire
 	// - the type is fire, the type becomes burned
-	private double status = 1;  
+	private double status = 1;
 	//avoid to enhance the fire status of a cell more than once per step
 	private boolean enhanced = false;
-	
+
 	/* Constructor*/
 	public WorldCell(int x, int y, CellType type){
 		this.x = x;
@@ -85,13 +85,13 @@ public class WorldCell implements Steppable{
 		Int2D otherPos = new Int2D(wc.x, wc.y);
 		return myPos.distance(otherPos)<2;
 	}
-	
+
 	@Override
 	public void step(SimState state) {
 		Ignite ignite = (Ignite) state;
-		
+
 		enhanced = false;
-		
+
 		if(this.type.equals(CellType.WATER) || this.type.equals(CellType.BURNED)){
 			return;
 		} else if(this.type.equals(CellType.FIRE)){
@@ -121,7 +121,7 @@ public class WorldCell implements Steppable{
 			//and there is a random probably that the cell with take fire by itself
 			if(this.status < statusThreshold){
 				this.type = CellType.FIRE;
-				this.status = 1;		
+				this.status = 1;
 				Ignite.cellsOnFire++;
 				//notify the tasks to let them compute the update
 				for(Task t : ignite.tasks){
@@ -132,22 +132,23 @@ public class WorldCell implements Steppable{
 				}
 			}else if(selfIgniteMax > 0){
 				if(ignite.schedule.getSteps()!=0 &&
-						ignite.schedule.getSteps()%500==0 && 
+						ignite.schedule.getSteps()%500==0 &&
 						ignite.random.nextDouble()>selfIgniteThreshold){
 					this.type = CellType.FIRE;
-					this.status = 1;		
+					this.status = 1;
 					Ignite.cellsOnFire++;
 					selfIgniteMax--;
 					//generate a new task
-					Task t = new Task(new Int2D(this.x, this.y), 0);
+					Task t = new Task(ignite.tasks.size()+1, new Int2D(this.x, this.y), 0);
 					t.addCell(this);
 					ignite.tasks.add(t);
-					
+					t.selectManager(ignite);
+					//t.manager.myTask = t;
 				}
 			}
 		}
 	}
-	
+
 	@Override
 	public boolean equals(Object obj){
 		WorldCell cell = (WorldCell) obj;

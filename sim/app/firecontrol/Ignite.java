@@ -41,8 +41,8 @@ public class Ignite extends SimState{
 
 	/* simulation params */
 	public int numUAVs = 10; //number of mavs involved in the simulation
-	public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
-	public LinkedList<UAV> UAVss;
+	//public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
+	public LinkedList<UAV> UAVs;
 
 	public static int height = 60; //size of the forest
 	public static int width = 60; //size of the forest
@@ -150,7 +150,7 @@ public class Ignite extends SimState{
 		//start with 3 fires and store their centroid in the tasks list
 		tasks = new LinkedList<>();
 		data = new LinkedList<>();
-		UAVss = new LinkedList<>();
+		UAVs = new LinkedList<>();
 
 		//generate fires
 		int fires = 2;
@@ -177,7 +177,7 @@ public class Ignite extends SimState{
 			forest.field[fireCenter.x][fireCenter.y] = cell;
 			cellsOnFire++;
 			//generate the task for global knowledge
-			Task t = new Task(new Int2D(fireCenter.x, fireCenter.y), 0);
+			Task t = new Task(l, new Int2D(fireCenter.x, fireCenter.y), 0);
 			t.addCell(cell);
 			tasks.add(t);
 
@@ -234,7 +234,7 @@ public class Ignite extends SimState{
 			extracted.add(location);
 			//generate a new UAV
 			UAV uav = new UAV(i, location);
-			UAVss.add(uav);
+			UAVs.add(uav);
 			//add the UAV to air at the location extracted
 			air.setObjectLocation(uav, location);
 			//schedule the agent
@@ -244,6 +244,14 @@ public class Ignite extends SimState{
 		//schedule the fireContrller, used to check the end of the simulation
 		FireController fireController = new FireController();
 		schedule.scheduleRepeating(fireController,3,1);
+
+		//assign the manager for every task
+		for(Task task : this.tasks){
+			task.selectManager(this);
+			task.UAVassigned += 1;
+			System.err.println("Manager task " + task.id +": UAV " + task.manager.id);
+			//task.manager.myTask = task;
+		}
 	}
 
 

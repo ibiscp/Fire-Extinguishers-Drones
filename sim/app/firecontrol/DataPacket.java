@@ -16,11 +16,13 @@ public class DataPacket{
 	public class Header{
 		public String timestamp;
 		public int id;
-		public Header(int id){
+		public boolean taskProposal;
+		public Header(int id, boolean taskProposal){
 			//TODO
 			//System.err.println("TODO: You have to define the header. Maybe a timestamp and an ID?");
 			this.timestamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 			this.id = id;
+			this.taskProposal = taskProposal;
 		}
 	};
 
@@ -45,8 +47,8 @@ public class DataPacket{
 	//define the data packet according to your payload and your header.
 	//please, note that if you do not define a good header you could have problem
 	//with duplicates messages
-	public DataPacket(int id, Double3D position, Set<WorldCell> knownCells, Task task){
-		this.header = new Header(id);
+	public DataPacket(int id, Double3D position, Set<WorldCell> knownCells, Task task, boolean taskProposal){
+		this.header = new Header(id, taskProposal);
 		this.payload = new Payload(position, knownCells, task);
 	}
 }

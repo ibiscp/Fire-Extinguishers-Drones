@@ -14,14 +14,23 @@ import sim.util.Int2D;
  *
  */
 public class Task{
+	public int id;
 	public Int2D centroid;
 	public double radius; //the utility?
+	public int utility;
+	public int UAVassigned;
 	public LinkedList<WorldCell> cells;
+	public UAV manager;
 
-	public Task(Int2D centroid, int initialRadius){
+	public static int height = 60; //size of the forest
+	public static int width = 60; //size of the forest
+
+	public Task(int id, Int2D centroid, int initialRadius){
+		this.id = id;
 		this.centroid = centroid;
 		this.radius = initialRadius;
 		this.cells = new LinkedList<>();
+		this.UAVassigned = 0;
 	}
 
 	public void addCell(WorldCell cell){
@@ -42,6 +51,9 @@ public class Task{
 				//now update the radius
 				Int2D cellPos = new Int2D(cell.x, cell.y);
 				this.radius = Math.max(cellPos.distance(this.centroid), this.radius);
+				this.utility = this.cells.size();
+				//System.err.println("Task " + this.id + "\t utility " + this.utility +
+				//									" " + this.cells.size() + " " + height*width);
 				return true;
 			}
 		}
@@ -57,6 +69,7 @@ public class Task{
 	 */
 	public boolean notifyExtinguishedFire(WorldCell cell) {
 		if(this.cells.remove(cell)){
+			this.utility = this.cells.size();
 			Int2D pos = new Int2D(cell.x, cell.y);
 			//if it was a border cell
 			if(radius == pos.distance(centroid)){
@@ -70,6 +83,21 @@ public class Task{
 			return true;
 		}
 		return false;
+	}
+
+	public void selectManager(Ignite ignite){
+		double bestDistance = 1000000; // Big number as inicial
+
+		//TODO avoud two tasks with the same manager
+
+		for(Object obj : ignite.UAVs){
+			UAV uav = (UAV) obj;
+			double uavDistance = Math.sqrt(Math.pow(uav.x - this.centroid.x, 2) + Math.pow(uav.y - this.centroid.y, 2));
+			if(uavDistance < bestDistance){
+				bestDistance = uavDistance;
+				this.manager = uav;
+			}
+		}
 	}
 
 	@Override
