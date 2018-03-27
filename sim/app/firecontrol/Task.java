@@ -30,7 +30,7 @@ public class Task{
 		this.centroid = centroid;
 		this.radius = initialRadius;
 		this.cells = new LinkedList<>();
-		this.UAVassigned = 0;
+		this.UAVassigned = 1; // Consider the manager as the first one
 	}
 
 	public void addCell(WorldCell cell){

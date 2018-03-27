@@ -248,7 +248,6 @@ public class Ignite extends SimState{
 		//assign the manager for every task
 		for(Task task : this.tasks){
 			task.selectManager(this);
-			task.UAVassigned += 1;
 			System.err.println("Manager task " + task.id +": UAV " + task.manager.id);
 		}
 	}

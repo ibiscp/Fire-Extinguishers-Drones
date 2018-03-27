@@ -129,7 +129,11 @@ public class UAV implements Steppable{
 
 		switch(a){
 		case PROPOSED:
-				//assignTasks(ignite);
+				this.attempt += 1;
+				if (this.target == null && this.attempt == 5){
+					this.attempt = 0;
+					this.target = new Double3D(random.nextInt(height), random.nextInt(width), this.z);
+				}
 				break;
 		case SELECT_TASK:
 			// ------------------------------------------------------------------------
@@ -185,14 +189,12 @@ public class UAV implements Steppable{
 	 * strategy
 	 */
 	private AgentAction nextAction(Ignite ignite){
-		/*if(this.myTask == null && this.action == null){
-			this.target = new Double3D(random.nextInt(height), random.nextInt(width), this.z);
-			return AgentAction.MOVE;
-		}
-		else */
 		//System.err.println("UAV " + this.id + ":\tTask " + this.myTask + "\tTarget " + this.target + "\tAction " + this.action);
 		/*if(this.myTask == null && this.action == AgentAction.PROPOSED){
 			//System.err.println("UAV " + this.id + ":\tProposed!");
+			return AgentAction.PROPOSED;
+		}
+		if(this.myTask == null && (this.action == null || this.action == AgentAction.PROPOSED)){
 			return AgentAction.PROPOSED;
 		}*/
 		//if I do not have a task I need to take one
@@ -227,18 +229,24 @@ public class UAV implements Steppable{
 				this.attempt += 1;
 				return AgentAction.SELECT_CELL;
 			}
-		}else{
+		}
+		else{
 			//System.err.println("UAV " + this.id + "\tTarget " + this.target + "\tPosition " + new Double3D(this.x, this.y, this.z));
 			return AgentAction.MOVE;
 		}
 	}
 
 	private void assignTasks(Ignite ignite) {
-		try{			
+		try{
+			if(this.id == this.myTask.manager.id){
+					/*System.err.println("UAV " + this.id + ":" +
+										"\tAssigned " + this.myTask.UAVassigned +
+										"\tProposals " + this.proposals.size());*/
+		}
 			if(this.id == this.myTask.manager.id && this.proposals.size() > 0){
 
-				System.err.println("UAV " + this.id + ": Tasksize " + ignite.tasks.size() +
-									" Proposals size " + this.proposals.size());
+				//System.err.println("UAV " + this.id + ": Tasksize " + ignite.tasks.size() +
+				//					" Proposals size " + this.proposals.size());
 
 				if(this.myTask.radius == 0){
 					ignite.tasks.remove(this.myTask);
@@ -253,28 +261,44 @@ public class UAV implements Steppable{
 					}
 
 					// Calculate UAV needed
-					int uavNeeded = (int)(ignite.numUAVs * this.myTask.utility / totalFire);
-
-					/*System.err.println("UAV " + this.id + ":" +
-															"\tProposals " + this.proposals.size() +
-															"\tUAV needed " + this.myTask.utility +
-															"\tTotal fire " + totalFire);
-															*/
+					int uavNeeded = (int)(ignite.numUAVs * this.myTask.utility / totalFire);															
 
 					// Assign tasks for the drones
 					int proposals = this.proposals.size();
 					for (int i=0; i<proposals; i++){
+						// Exit if more UAV than needed
+						if (this.myTask.UAVassigned >= uavNeeded)
+							break;
+
 						UAV bestUAV = null;
 						double bestOffer = 0;
 						for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
-							if (UAVoffer.getValue() > bestOffer)
+							if (UAVoffer.getValue() > bestOffer){
 								bestOffer = UAVoffer.getValue();
 								bestUAV = UAVoffer.getKey();
+							}
 						}
 						this.proposals.remove(bestUAV);
+						this.myTask.UAVassigned += 1;
 						bestUAV.myTask = this.myTask;
 						bestUAV.target = new Double3D(this.myTask.centroid.x, this.myTask.centroid.y, bestUAV.z);
+						System.err.println("UAV " + bestUAV.id + ":" + "\tAssigned task " + this.myTask.id + "\t by UAV " +
+							this.myTask.manager.id + "\tProposals size " + this.proposals.size());
 					}
+
+					proposals = this.proposals.size();
+					for (int i=0; i<proposals; i++){
+						for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
+							UAV uav = UAVoffer.getKey();
+							uav.action = null;
+							this.proposals.remove(uav);
+						}
+					}
+
+					System.err.println("UAV " + this.id + ":" +
+										"\tAssigned " + this.myTask.UAVassigned +
+										"\tProposals " + this.proposals.size() +
+										"\tUAV needed " + uavNeeded);
 				}
 			}
 		}catch(NullPointerException e){}
@@ -291,7 +315,7 @@ public class UAV implements Steppable{
 		for(Task task : ignite.tasks){
 			if(this.id == task.manager.id){
 				requestForBid(task, ignite);
-				System.err.println("UAV " + this.id + ":\tRequest for proposal sent!");
+				//System.err.println("UAV " + this.id + ":\tRequest for proposal sent!");
 
 				this.action = AgentAction.PROPOSED;
 				this.myTask = task;
@@ -308,7 +332,7 @@ public class UAV implements Steppable{
 				if (dp.header.taskProposal == true)
 					propose(dp.payload.task, ignite);
 					this.action = AgentAction.PROPOSED;
-					System.err.println("UAV " + this.id + ":\tPropose sent!");
+					System.err.println("UAV " + this.id + ":\tPropose sent to UAV " + dp.payload.task.manager.id);
 			}
 		}
 		else{
@@ -381,12 +405,12 @@ public class UAV implements Steppable{
 			newPosition = new Double3D(newTarget.x + randX, newTarget.y + randY, newTarget.z);
 
 			if(trials >= 10){
-				System.err.println("UAV " + this.id + ":\tERROR");
+				//System.err.println("UAV " + this.id + ":\tERROR");
 				newPosition = newTarget;
 				this.attempt += 1;
 				break;
 			}
-		} while((randX == 0 && randY == 0) || !(ignite.isInBounds(newPosition)) || newRadius > radius || newRadius < radius-10);
+		} while((randX == 0 && randY == 0) || !(ignite.isInBounds(newPosition)) || newRadius > radius || newRadius < radius-7);
 
 		return newPosition;
 	}
@@ -511,8 +535,8 @@ public class UAV implements Steppable{
 	//#############################################################################
 	// Request for bid
 	public void requestForBid(Task task, Ignite ignite){
-		Double3D position = new Double3D(this.x,this.y,this.z);
-		DataPacket taskProposal = new DataPacket(-1, position, null, task, true);
+		Double3D position = new Double3D(task.centroid.x,task.centroid.y,this.z);
+		DataPacket taskProposal = new DataPacket(this.id, position, null, task, true);
 		sendData(taskProposal, ignite, true);
 	}
 
