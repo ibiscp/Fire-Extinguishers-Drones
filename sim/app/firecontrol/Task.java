@@ -52,8 +52,6 @@ public class Task{
 				Int2D cellPos = new Int2D(cell.x, cell.y);
 				this.radius = Math.max(cellPos.distance(this.centroid), this.radius);
 				this.utility = this.cells.size();
-				//System.err.println("Task " + this.id + "\t utility " + this.utility +
-				//									" " + this.cells.size() + " " + height*width);
 				return true;
 			}
 		}

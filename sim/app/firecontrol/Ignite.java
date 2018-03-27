@@ -40,7 +40,7 @@ public class Ignite extends SimState{
 	public ObjectGrid2D forest;
 
 	/* simulation params */
-	public int numUAVs = 10; //number of mavs involved in the simulation
+	public int numUAVs = 30; //number of mavs involved in the simulation
 	//public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
 	public LinkedList<UAV> UAVs;
 
@@ -250,7 +250,6 @@ public class Ignite extends SimState{
 			task.selectManager(this);
 			task.UAVassigned += 1;
 			System.err.println("Manager task " + task.id +": UAV " + task.manager.id);
-			//task.manager.myTask = task;
 		}
 	}
 
