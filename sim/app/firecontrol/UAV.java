@@ -128,7 +128,6 @@ public class UAV implements Steppable{
 		AgentAction a = nextAction(ignite);
 
 		assignTasks(ignite);
-		//this.action = a;
 
 		switch(a){
 		case PROPOSED:
@@ -241,11 +240,6 @@ public class UAV implements Steppable{
 
 	private void assignTasks(Ignite ignite) {
 		try{
-			if(this.id == this.myTask.manager.id){
-					/*System.err.println("UAV " + this.id + ":" +
-										"\tAssigned " + this.myTask.UAVassigned +
-										"\tProposals " + this.proposals.size());*/
-		}
 			if(this.id == this.myTask.manager.id && this.proposals.size() > 0){
 
 				//System.err.println("UAV " + this.id + ": Tasksize " + ignite.tasks.size() +
@@ -291,14 +285,15 @@ public class UAV implements Steppable{
 								this.myTask.manager.id + "\tProposals size " + this.proposals.size());
 						}
 
-						/*proposals = this.proposals.size();
+						System.err.println("Tá imprimindo essa porra!");
+						proposals = this.proposals.size();
 						for (int i=0; i<proposals; i++){
 							for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
 								UAV uav = UAVoffer.getKey();
 								uav.action = null;
 								this.proposals.remove(uav);
 							}
-						}*/
+						}
 					} finally {
 						lock.unlock();
 					}
