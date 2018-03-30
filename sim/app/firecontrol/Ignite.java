@@ -40,7 +40,7 @@ public class Ignite extends SimState{
 	public ObjectGrid2D forest;
 
 	/* simulation params */
-	public int numUAVs = 30; //number of mavs involved in the simulation
+	public int numUAVs = 40; //number of mavs involved in the simulation
 	//public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
 	public LinkedList<UAV> UAVs;
 
@@ -219,8 +219,8 @@ public class Ignite extends SimState{
 		//schedule all the cells
 		for(int w=0; w<width; w++){
 			for(int h=0; h<height; h++){
-				//schedule.scheduleRepeating((WorldCell)forest.field[w][h], 2, 1);
-				schedule.scheduleRepeating((WorldCell)forest.field[w][h], numUAVs + 1, 1);
+				schedule.scheduleRepeating((WorldCell)forest.field[w][h], 2, 1);
+				//schedule.scheduleRepeating((WorldCell)forest.field[w][h], numUAVs + 1, 1);
 			}
 		}
 
@@ -239,13 +239,14 @@ public class Ignite extends SimState{
 			//add the UAV to air at the location extracted
 			air.setObjectLocation(uav, location);
 			//schedule the agent
-			schedule.scheduleRepeating(uav, i + 1, 1);
+			//schedule.scheduleRepeating(uav, i + 1, 1);
+			schedule.scheduleRepeating(uav, 1, 1);
 		}
 
 		//schedule the fireContrller, used to check the end of the simulation
 		FireController fireController = new FireController();
-		schedule.scheduleRepeating(fireController,numUAVs + 2,1);
-		//schedule.scheduleRepeating(fireController,3,1);
+		//schedule.scheduleRepeating(fireController,numUAVs + 2,1);
+		schedule.scheduleRepeating(fireController,3,1);
 
 		//assign the manager for every task
 		for(Task task : this.tasks){

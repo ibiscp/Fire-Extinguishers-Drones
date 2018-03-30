@@ -83,17 +83,17 @@ public class Task{
 		return false;
 	}
 
+	// Assign manager to the task
 	public void selectManager(Ignite ignite){
 		double bestDistance = 1000000; // Big number as inicial
-
-		//TODO avoud two tasks with the same manager
 
 		for(Object obj : ignite.UAVs){
 			UAV uav = (UAV) obj;
 			double uavDistance = Math.sqrt(Math.pow(uav.x - this.centroid.x, 2) + Math.pow(uav.y - this.centroid.y, 2));
-			if(uavDistance < bestDistance){
+			if(uavDistance < bestDistance && uav.action == null){
 				bestDistance = uavDistance;
 				this.manager = uav;
+				uav.action = AgentAction.IS_MANAGER;
 			}
 		}
 	}

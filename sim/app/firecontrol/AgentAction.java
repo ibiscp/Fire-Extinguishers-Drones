@@ -13,5 +13,5 @@
 package sim.app.firecontrol;
 
 public enum AgentAction {
-	SELECT_TASK, SELECT_CELL, MOVE, EXTINGUISH, PROPOSED
+	SELECT_TASK, SELECT_CELL, MOVE, EXTINGUISH, PROPOSED, IS_MANAGER
 }
