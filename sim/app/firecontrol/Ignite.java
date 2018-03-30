@@ -53,7 +53,7 @@ public class Ignite extends SimState{
 	public static int cellsOnWater = 0;
 
 	public LinkedList<Task> tasks;
-	public LinkedList<DataPacket> data;
+	//public LinkedList<DataPacket> data;
 
 	/**
 	 * Constructor
@@ -149,7 +149,7 @@ public class Ignite extends SimState{
 		//set the world on fire
 		//start with 3 fires and store their centroid in the tasks list
 		tasks = new LinkedList<>();
-		data = new LinkedList<>();
+		//data = new LinkedList<>();
 		UAVs = new LinkedList<>();
 
 		//generate fires
@@ -219,7 +219,8 @@ public class Ignite extends SimState{
 		//schedule all the cells
 		for(int w=0; w<width; w++){
 			for(int h=0; h<height; h++){
-				schedule.scheduleRepeating((WorldCell)forest.field[w][h], 2, 1);
+				//schedule.scheduleRepeating((WorldCell)forest.field[w][h], 2, 1);
+				schedule.scheduleRepeating((WorldCell)forest.field[w][h], numUAVs + 1, 1);
 			}
 		}
 
@@ -238,12 +239,13 @@ public class Ignite extends SimState{
 			//add the UAV to air at the location extracted
 			air.setObjectLocation(uav, location);
 			//schedule the agent
-			schedule.scheduleRepeating(uav, 1, 1);
+			schedule.scheduleRepeating(uav, i + 1, 1);
 		}
 
 		//schedule the fireContrller, used to check the end of the simulation
 		FireController fireController = new FireController();
-		schedule.scheduleRepeating(fireController,3,1);
+		schedule.scheduleRepeating(fireController,numUAVs + 2,1);
+		//schedule.scheduleRepeating(fireController,3,1);
 
 		//assign the manager for every task
 		for(Task task : this.tasks){

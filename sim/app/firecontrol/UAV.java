@@ -26,6 +26,8 @@ import sim.util.Int3D;
 import sim.field.grid.ObjectGrid2D;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class UAV implements Steppable{
 	private static final long serialVersionUID = 1L;
@@ -60,6 +62,7 @@ public class UAV implements Steppable{
 	public static int width = 60; //size of the forest
 	public DataPacket data;
 	public Map<UAV, Double> proposals;
+	private Lock lock = new ReentrantLock();
 
 	public UAV(int id, Double3D myPosition){
 		//set agent's id
@@ -208,7 +211,7 @@ public class UAV implements Steppable{
 		//else, if I have a target and task I need to move toward the target
 		//check if I am over the target and in that case execute the right action;
 		//if not, continue to move toward the target
-		//else if(this.target.equals(ignite.air.discretize(new Double3D(x, y, z)))){
+		//else if(this.target.equals(ignite.air.discretize(new Double3D(this.x, this.y, this.z)))){
 		else if(this.target.equals(new Double3D(x, y, z))){
 			//if on fire then extinguish, otherwise move on
 			WorldCell cell = (WorldCell)ignite.forest.field[(int) x][(int) y];
@@ -264,35 +267,40 @@ public class UAV implements Steppable{
 					int uavNeeded = (int)(ignite.numUAVs * this.myTask.utility / totalFire);															
 
 					// Assign tasks for the drones
-					int proposals = this.proposals.size();
-					for (int i=0; i<proposals; i++){
-						// Exit if more UAV than needed
-						if (this.myTask.UAVassigned >= uavNeeded)
-							break;
+					lock.lock();
+					try{
+						int proposals = this.proposals.size();
+						for (int i=0; i<proposals; i++){
+							// Exit if more UAV than needed
+							if (this.myTask.UAVassigned >= uavNeeded)
+								break;
 
-						UAV bestUAV = null;
-						double bestOffer = 0;
-						for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
-							if (UAVoffer.getValue() > bestOffer){
-								bestOffer = UAVoffer.getValue();
-								bestUAV = UAVoffer.getKey();
+							UAV bestUAV = null;
+							double bestOffer = 0;
+							for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
+								if (UAVoffer.getValue() > bestOffer && UAVoffer.getKey().myTask == null){
+									bestOffer = UAVoffer.getValue();
+									bestUAV = UAVoffer.getKey();
+								}
 							}
+							this.proposals.remove(bestUAV);
+							this.myTask.UAVassigned += 1;
+							bestUAV.myTask = this.myTask;
+							bestUAV.target = new Double3D(this.myTask.centroid.x, this.myTask.centroid.y, bestUAV.z);
+							System.err.println("UAV " + bestUAV.id + ":" + "\tAssigned task " + this.myTask.id + "\t by UAV " +
+								this.myTask.manager.id + "\tProposals size " + this.proposals.size());
 						}
-						this.proposals.remove(bestUAV);
-						this.myTask.UAVassigned += 1;
-						bestUAV.myTask = this.myTask;
-						bestUAV.target = new Double3D(this.myTask.centroid.x, this.myTask.centroid.y, bestUAV.z);
-						System.err.println("UAV " + bestUAV.id + ":" + "\tAssigned task " + this.myTask.id + "\t by UAV " +
-							this.myTask.manager.id + "\tProposals size " + this.proposals.size());
-					}
 
-					proposals = this.proposals.size();
-					for (int i=0; i<proposals; i++){
-						for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
-							UAV uav = UAVoffer.getKey();
-							uav.action = null;
-							this.proposals.remove(uav);
-						}
+						/*proposals = this.proposals.size();
+						for (int i=0; i<proposals; i++){
+							for(Map.Entry<UAV, Double> UAVoffer : this.proposals.entrySet()){
+								UAV uav = UAVoffer.getKey();
+								uav.action = null;
+								this.proposals.remove(uav);
+							}
+						}*/
+					} finally {
+						lock.unlock();
 					}
 
 					System.err.println("UAV " + this.id + ":" +
@@ -332,7 +340,8 @@ public class UAV implements Steppable{
 				if (dp.header.taskProposal == true)
 					propose(dp.payload.task, ignite);
 					this.action = AgentAction.PROPOSED;
-					System.err.println("UAV " + this.id + ":\tPropose sent to UAV " + dp.payload.task.manager.id);
+					System.err.println("UAV " + this.id + ":\tPropose sent to UAV " + dp.payload.task.manager.id
+						+ "\tPackage size " + dp.payload.task.manager.proposals.size());
 			}
 		}
 		else{
@@ -544,13 +553,24 @@ public class UAV implements Steppable{
 	public void propose(Task task, Ignite ignite){
 		double distance = Math.sqrt(Math.pow(this.x - task.centroid.x,2) + Math.pow(this.y - task.centroid.y,2));
 		double offer = task.utility / distance;
-		task.manager.proposals.put(this, offer);
+		lock.lock();
+		try{
+			task.manager.proposals.put(this, offer);
+		} finally{
+			lock.unlock();
+		}
+		
 	}
 
 	// Refuse task
 	public void refuse(Task task, Ignite ignite){
 		//DataPacket taskRefused = new DataPacket(-1, null, null, task, "taskRefused");
-		task.manager.proposals.put(this, 0.0);
+		lock.lock();
+		try{
+			task.manager.proposals.put(this, 0.0);
+		} finally{
+			lock.unlock();
+		}
 	}
 
 
