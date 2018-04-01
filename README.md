@@ -9,7 +9,7 @@ Description of the problem
 The simulator is a representation of a forest where some fire outbreaks are being spread, as shown in image below. The fires and the drones start at random position and they need to communicate and decide which UAVs will help extinguish which fire as well as where to move next and what to do if it cannot find any fire in the neighbor cells.
 
 <p align="center">
-<img src="report/images/environment.png" width="300"/>
+<img src="report/images/environment.png" width="300"/><br>
 <i>Simulator screenshot</i>
 </p>
 
