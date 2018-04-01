@@ -1,0 +1,8 @@
+Total cells: 3600
+Cells recovered: 2299
+Cells burned: 1077
+Cells water: 195
+Cells not touched: 29
+Number of fires: 2
+Number of UAVs: 40
+Communication range: 10

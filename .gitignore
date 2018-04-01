@@ -1,2 +1,2 @@
 /sim/app/firecontrol/*.class
-*.txt
+.ipynb_checkpoints/
