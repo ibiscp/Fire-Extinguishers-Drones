@@ -46,10 +46,35 @@ The random walk is necessary for the UAVs to chose a next cell to visit. The UAV
 It was implemented a first version of sharing data, the drones are sharing their position with all the drones in the communication range if they see fire, so when a drone is lost, it can use this information of the closest drone in order to continue random walk from that position. It is important because when a group of drones is already finished to extinguish a fire in one place and there is no more fire nearby, they automatically move to the place where there is fire, and this behaviour can be easily seen with the simulation.
 
 \section{Results}
+To compile the results, a 50-iteration sequence was used to collect the data. The first result, shown in image \ref{fig:fig2}, is using 2 fire outbreaks with 40 UAVs with a communication range of 30 cells. It is possible to notice that with this number of fires and UAVs, there is a high number of normal cells, which means that the simulation finishes before burning it all, the drones are able to extinguish it.
 
+\begin{figure}[!ht]
+\centering
+\includegraphics[scale=0.6]{fires_2_uavs_40_range_30}
+\caption{Simulation with 2 fire outbreaks and 40 UAVs}
+\label{fig:fig2}
+\end{figure}
+
+Changing the values for 3 fire outbreaks and only 20 UAVs with the same communication range, it is possible to see that the number of normal cells go to basically 0, which means the the drones were able to help extinguishing the fires but not avoiding it from spreading through the forest, as shown in image \ref{fig:fig3}.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[scale=0.6]{fires_3_uavs_20_range_30}
+\caption{Simulation with 3 fire outbreaks and 20 UAVs}
+\label{fig:fig3}
+\end{figure}
+
+Now, using the same configuration as the first graph, however reducing the communication range to only 10 cells, it is possible to notice that the efficiency drops a lot. Image \ref{fig:fig4} shows that the UAVs are able to extinguish the fire before it spreads through the forest, but its result is notably worse when compared using a better communication range.
+
+\begin{figure}[!ht]
+\centering
+\includegraphics[scale=0.6]{fires_2_uavs_40_range_10}
+\caption{Simulation with 2 fire outbreaks and 40 UAVs with low communication range}
+\label{fig:fig4}
+\end{figure}
 
 \section{Conclusions}
-It was really interesting to see and implement the Contract Net Protocol for multi agent cooperation system, and also study strategies to make it more efficient. The algorithm here presented is not perfect and a lot of things still could be done to have a better performance, however the results achieved are already satisfatories.
+It was really interesting to see and implement the Contract Net Protocol for multi agent cooperation system, and also study strategies to make it more efficient. The algorithm here presented is not perfect and a lot of things still could be done to have a better performance, however the results achieved are satisfatories and the goal of the project achieved.
 
 For future work, it would be interesting to improve the data sharing, so the UAVs can share besides only their position, their internal map, so all other drones can update their knowledge and be more acertive when doing random walk.
 
