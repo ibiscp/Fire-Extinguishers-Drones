@@ -40,7 +40,7 @@ public class Ignite extends SimState{
 	public ObjectGrid2D forest;
 
 	/* simulation params */
-	public int numUAVs = 40; //number of mavs involved in the simulation
+	public int numUAVs = 20; //number of mavs involved in the simulation
 	//public Bag UAVs; // all the agents in the simulation. Bag size is numMavs
 	public LinkedList<UAV> UAVs;
 
@@ -54,6 +54,7 @@ public class Ignite extends SimState{
 
 	public LinkedList<Task> tasks;
 	//public LinkedList<DataPacket> data;
+	int fires = 3;
 
 	/**
 	 * Constructor
@@ -153,7 +154,6 @@ public class Ignite extends SimState{
 		UAVs = new LinkedList<>();
 
 		//generate fires
-		int fires = 2;
 		for(int l=0; l<fires; l++){
 			Int2D fireCenter;
 			Int2D nextLocation;
