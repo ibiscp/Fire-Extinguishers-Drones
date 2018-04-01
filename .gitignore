@@ -1,2 +1,2 @@
-*.class
+/sim/app/firecontrol/*.class
 *.txt

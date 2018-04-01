@@ -22,7 +22,7 @@ public class FireController implements Steppable{
 		Ignite ignite = (Ignite)state;
 		//create a .txt file where we can store simulation informations
 		if(Ignite.cellsOnFire == 0){
-			String fileName = System.getProperty("user.dir") + "/" + System.currentTimeMillis() + ".txt";
+			String fileName = System.getProperty("user.dir") + "/results/" + System.currentTimeMillis() + ".txt";
 			
 			try {
 				FileWriter fw = new FileWriter(new File(fileName),true);
@@ -32,6 +32,8 @@ public class FireController implements Steppable{
 				bwr.append("\nCells burned: " + cellsRecovered(ignite, CellType.BURNED));
 				bwr.append("\nCells water: " + cellsRecovered(ignite, CellType.WATER));
 				bwr.append("\nCells not touched: " + cellsRecovered(ignite, CellType.NORMAL));
+				bwr.append("\nNumber of fires: " + ignite.tasks.size());
+				bwr.append("\nNumber of UAVs: " + ignite.numUAVs);
 				bwr.flush();
 				bwr.close();
 			} catch (IOException e) {
